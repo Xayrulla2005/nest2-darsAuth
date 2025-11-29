@@ -1,11 +1,12 @@
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
-import { User } from './schema/user.schema';
-import { InjectModel } from '@nestjs/sequelize';
+import { User } from './entities/user.entities';
 import { CreateUserDto, LoginDto, VerifayDto } from './dto/create.auth.dto';
 import * as bcrypt from 'bcrypt';
 import * as nodemailer from "nodemailer";
 import { JwtService } from '@nestjs/jwt';
 import { access } from 'fs';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class AuthService {
@@ -17,15 +18,15 @@ export class AuthService {
     }
   })
   constructor(
-    @InjectModel(User) private userModel: typeof User,
+    @InjectRepository(User) private userRepo: Repository<User>,
     private jwtService: JwtService
   ) {}
 
   ///// register
-  async register (createUserDto:CreateUserDto):Promise<{message:string}>{
+  async register (createUserDto:CreateUserDto):Promise<User>{
     const {username,email,password}=createUserDto
 
-    const foundUser=await this.userModel.findOne({where:{email}})
+    const foundUser=await this.userRepo.findOne({where:{email}})
 
     if(foundUser){
       throw new UnauthorizedException("User alredy exsist")
@@ -44,13 +45,12 @@ await this.transporter.sendMail({
 
 const time=Date.now()+120000
 
-await this.userModel.create(
-  {
+const newUser= this.userRepo.create({
   username,email,password:hash,otp:randomNumber,otpTime:time
-}
-)
+})
 
-  return {message:"Registered"}
+
+  return this.userRepo.save(newUser)
   }
 
 
@@ -58,7 +58,7 @@ await this.userModel.create(
    async verifay (verifayDto:VerifayDto):Promise<{message:string}>{
     const {email,otp}=verifayDto
 
-    const foundUser=await this.userModel.findOne({where:{email}})
+    const foundUser=await this.userRepo.findOne({where:{email}})
 
     if(!foundUser){
       throw new UnauthorizedException("User not found")
@@ -72,7 +72,11 @@ await this.userModel.create(
       throw new BadRequestException("Wrong ottp")
     }
     
-    await this.userModel.update({otp:null,otpTime:null,isVerifide:true},{where:{email}})
+    await this.userRepo.update(
+  { email },
+  { otp: null, otpTime: null, isVerified: true }   
+);
+
 
   return {message:"Verifayed"}
   }
@@ -81,7 +85,7 @@ await this.userModel.create(
 async login(loginDto:LoginDto): Promise<{ access_token: string }> {
      const {email,password}=loginDto
 
-    const foundUser=await this.userModel.findOne({where:{email}})
+    const foundUser=await this.userRepo.findOne({where:{email}})
 
     if(!foundUser){
       throw new UnauthorizedException("User not found")

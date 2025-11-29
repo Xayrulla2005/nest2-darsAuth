@@ -1,14 +1,15 @@
 import { Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
-import { Sequelize } from 'sequelize';
-import { SequelizeModule } from '@nestjs/sequelize';
-import { User } from './schema/user.schema';
+import { User } from './entities/user.entities';
 import { JwtModule } from '@nestjs/jwt';
-import { jwtConstants } from './auth.constans';
+import { jwtConstants } from 'src/common/constans/jwt.constans';
+import { TypeOrmModule } from '@nestjs/typeorm';
+
 
 @Module({
-  imports:[SequelizeModule.forFeature([User]),
+  imports:[
+    TypeOrmModule.forFeature([User]),
 JwtModule.register({
       global: true,
       secret: jwtConstants.secret,

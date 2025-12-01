@@ -1,3 +1,4 @@
+import { UserRole } from "src/common/constans/role"
 import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm"
 
 
@@ -14,20 +15,23 @@ email:string
 @Column()
 password:string
 
-@Column({ type: "int", nullable: true })
-otp: number | null;
+@Column({ default:null, nullable: true })
+otp: number ;
 
 @Column({ type: "bigint", nullable: true })
-otpTime: number | null;
+otpTime: number ;
 
 @Column({ default: false })
 isVerified: boolean;
 
+@Column({ default: UserRole.USER })
+role: UserRole;
 
-@UpdateDateColumn({default:Date})
+
+@UpdateDateColumn()
 updatedAt:Date
 
-@CreateDateColumn({default:Date})
+@CreateDateColumn()
 createdAt:Date 
   dataValues: any
 

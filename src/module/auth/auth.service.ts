@@ -23,7 +23,7 @@ export class AuthService {
   ) {}
 
   ///// register
-  async register (createUserDto:CreateUserDto):Promise<User>{
+  async register (createUserDto:CreateUserDto):Promise<{message:string}>{
     const {username,email,password}=createUserDto
 
     const foundUser=await this.userRepo.findOne({where:{email}})
@@ -46,11 +46,11 @@ await this.transporter.sendMail({
 const time=Date.now()+120000
 
 const newUser= this.userRepo.create({
-  username,email,password:hash,otp:randomNumber,otpTime:time
+  username,email,password:hash,otp:randomNumber,otpTime:+time
 })
 
-
-  return this.userRepo.save(newUser)
+await this.userRepo.save(newUser)
+  return {message:"Registred"}
   }
 
 
@@ -64,17 +64,15 @@ const newUser= this.userRepo.create({
       throw new UnauthorizedException("User not found")
     }
     const time =Date.now()
-    if(+foundUser.dataValues.otpTime<time){
+    if(+foundUser.otpTime<time){
       throw new BadRequestException("Otp time expired")
     }
 
-    if(+foundUser.dataValues.otp !== +otp){
+    if(+foundUser.otp !== +otp){
       throw new BadRequestException("Wrong ottp")
     }
     
-    await this.userRepo.update(
-  { email },
-  { otp: null, otpTime: null, isVerified: true }   
+    await this.userRepo.update(foundUser.id ,{ otp: 0, otpTime: 0, isVerified: true }   
 );
 
 
@@ -93,7 +91,7 @@ async login(loginDto:LoginDto): Promise<{ access_token: string }> {
 
     const decode=await bcrypt.compare(password,foundUser.dataValues.password)
     if(decode && foundUser.dataValues.isVerifide){
-      const payload={sub:foundUser.dataValues.id,username:foundUser.dataValues.username}
+      const payload={sub:foundUser.id,username:foundUser.username, role:foundUser.role}
        return {
       access_token: await this.jwtService.signAsync(payload),
     }
@@ -101,4 +99,18 @@ async login(loginDto:LoginDto): Promise<{ access_token: string }> {
       throw new BadRequestException("Inwaled password")
     }
    }
+
+   async deleteUser(id:number){
+    const foundUser=await this.userRepo.findOne({where:{id}})
+
+    if(!foundUser){
+      throw new UnauthorizedException("User not found")
+    }
+
+    await this.userRepo.delete({id})
+
+    return true
+
+   }
+
   }

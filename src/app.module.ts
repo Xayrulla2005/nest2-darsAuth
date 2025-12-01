@@ -1,8 +1,12 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { AuthModule } from './auth/auth.module';
+import { AuthModule } from './module/auth/auth.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from './auth/entities/user.entities';
+import { ValidationPipe } from './common/pipe/validation.pipe';
+import { APP_GUARD, APP_PIPE } from '@nestjs/core';
+import { ProductModule } from './module/product/product.module';
+import { AuthGuard } from './common/guards/auth.guard';
+
 
 
 @Module({
@@ -15,12 +19,19 @@ import { User } from './auth/entities/user.entities';
     password:String(process.env.DB_PASSWORD as string),
     database:String(process.env.DB_DATABASE as string),
     synchronize:true,
-    entities:[User],
-    logging:false
+    autoLoadEntities:true,
+    logging:["error","warn","info"]
    }),
-   AuthModule
+   AuthModule,
+   ProductModule
   ],
   controllers: [],
-  providers: [],
+  providers: [ {
+      provide: APP_PIPE,
+      useClass: ValidationPipe,
+      
+    },
+  
+  ],
 })
 export class AppModule {}

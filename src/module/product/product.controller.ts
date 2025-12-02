@@ -8,31 +8,35 @@ import { Roles } from 'src/common/decarators/role.decarator';
 import { UserRole } from 'src/common/constans/role';
 
 @Controller('product')
+@UseGuards(AuthGuard,RolesGuard)
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
+  @Roles(UserRole.ADMIN)
   @Post()
   create(@Body() createProductDto: CreateProductDto) {
     return this.productService.create(createProductDto);
   }
 
-  @UseGuards(AuthGuard,RolesGuard)
-  @Roles(UserRole.USER)
+  @Roles(UserRole.USER,UserRole.ADMIN)
   @Get()
   findAll() {
     return this.productService.findAll();
   }
 
+  @Roles(UserRole.USER,UserRole.ADMIN)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.productService.findOne(+id);
   }
 
+  @Roles(UserRole.ADMIN)
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
     return this.productService.update(+id, updateProductDto);
   }
 
+  @Roles(UserRole.ADMIN)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.productService.remove(+id);

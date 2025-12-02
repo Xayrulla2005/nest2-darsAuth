@@ -107,7 +107,7 @@ async login(loginDto:LoginDto): Promise<{ access_token: string }> {
       throw new UnauthorizedException("User not found")
     }
 
-    await this.userRepo.delete({id})
+    await this.userRepo.delete({id:foundUser.id})
 
     return true
 
